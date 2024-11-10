@@ -1,0 +1,571 @@
+\section{Appendix}
+
+\subsection{Code}
+
+\subsubsection{Question 1}
+
+\begin{lstlisting}
+{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+Sys.setenv(LANG = "en")
+setwd("C:/Users/Lecuo/Desktop/StatLabWithR")
+library(dplyr)
+#install.packages("xtable")
+library(xtable)
+#install.packages("papeR")
+library(papeR)
+library(car)
+library(MASS)
+library(ggplot2)
+#install.packages("plotrix")
+library(plotrix)
+rm(list = ls())
+
+data<-read.csv("auto_mpg.csv",header=TRUE,sep=';')
+dim(data)
+sink(file = "dataheading.txt")
+data
+sink(file = NULL)
+
+data<-subset(data, data$horsepower != "?")
+data$horsepower<-as.double(data$horsepower)
+gooddata<-subset(data, select = -c(model_year,origin,car_name))
+gooddata
+xtable(summarize(gooddata), caption = "Basic univariate summary statistics for mgp, cylinders, displacement, horsepower, weight, acceleration")
+sink(file = "datasummary.txt")
+summary(data)
+sink()
+
+jpeg(file="mpgtrans.jpeg")
+par(mfrow=c(2,2))
+hist(data$weight, breaks = 40)
+boxplot(data$weight)
+#dev.off()
+#jpeg(file="mpgtrans2.jpeg")
+#par(mfrow=c(1,2))
+hist(log(data$weight), breaks = 40)
+boxplot(log(data$weight))
+dev.off()
+jpeg(file="mpgtrans3.jpeg")
+par(mfrow=c(2,2))
+hist(sqrt(data$weight), breaks = 40)
+boxplot(sqrt(data$weight))
+#dev.off()
+#jpeg(file="mpgtrans4.jpeg")
+#par(mfrow=c(1,2))
+hist(1/sqrt(data$weight), breaks = 40)
+boxplot(1/sqrt(data$weight))
+dev.off()
+
+png(file="mpgloghist.png")
+par(mfrow=c(1,1))
+mpg<-data$mgp
+hist(log(mpg), breaks = 40)
+dev.off()
+
+png(file="disphist.png")
+par(mfrow=c(1,1))
+displacement<-data$displacement
+hist(displacement, breaks = 40)
+dev.off()
+
+png(file="accelhist.png")
+par(mfrow=c(1,1))
+
+acceleration <- data$acceleration
+hist(acceleration, breaks = 40)
+dev.off()
+
+png(file="hphist.png")
+par(mfrow=c(1,1))
+
+horsepower <- data$horsepower
+hist(horsepower, breaks = 40)
+dev.off()
+
+png(file="weighthist.png")
+par(mfrow=c(1,1))
+
+weight <- data$weight
+hist(weight, breaks = 40)
+dev.off()
+
+png(file="cylinderbarplot.png")
+par(mfrow=c(1,1))
+ggplot(data, aes(x=factor(cylinders)))+
+  geom_bar(stat="count", width=0.7, fill="steelblue")+
+  theme_minimal()
+dev.off()
+
+labels(data)
+gooddata<-data
+gooddata$model_year = as.factor((gooddata$model_year))
+gooddata$origin = as.factor(gooddata$origin)
+gooddata$cylinders = as.factor(gooddata$cylinders)
+xtable(summarize(gooddata, type = "factor", variables = "model_year"), caption = "Basic univariate summary statistics for model_year")
+xtable(summarize(gooddata, type = "factor", variables = "origin"), caption = "Basic univariate summary statistics for origin")
+xtable(summarize(gooddata, type = "factor", variables = "cylinders"), caption = "Basic univariate summary statistics for cylinders")
+
+data = subset(data,data$horsepower!="?")
+data
+data$horsepower<-as.double(data$horsepower)
+data
+set.seed(0)
+n<-nrow(data)
+train_indice<-sample(seq_len(n), size = 0.8 * n)
+train_data<-data[train_indice, ]
+test_data<-data[-train_indice, ]
+train_data
+test_data
+data<-train_data
+
+data$origin<-as.factor(data$origin)
+data
+attach(data)
+model<-lm(data$mgp~data$cylinders+data$displacement+data$horsepower+data$weight+data$acceleration+data$model_year+data$origin)
+model<-step(model)
+xtable(summary(model))
+#sink(file = "test.txt")
+summary(model)
+#sink()
+AIC(model)
+BIC(model)
+
+summary(model)
+
+model_full<-lm(data$mgp ~ data$displacement + data$weight + data$acceleration + data$model_year + data$origin)
+model_reduced<-lm(data$mgp ~ data$weight + data$acceleration + data$model_year + data$origin)
+anova(model_full,model_reduced)
+
+boxcox(lm(data$mgp~1))
+png("weightboxcox.png")
+boxcox(lm(data$weight~1))
+dev.off()
+png("accelboxcox.png")
+boxcox(lm(data$acceleration~1))
+dev.off()
+
+acceleration<-data$acceleration
+jpeg(file="acceltrans1.jpeg")
+par(mfrow=c(2,2))
+hist(acceleration, breaks = 40)
+boxplot(acceleration)
+#dev.off()
+#jpeg(file="mpgtrans2.jpeg")
+#par(mfrow=c(1,2))
+hist(log(acceleration), breaks = 40)
+boxplot(log(acceleration))
+dev.off()
+jpeg(file="acceltrans2.jpeg")
+par(mfrow=c(2,2))
+hist(sqrt(acceleration), breaks = 40)
+boxplot(sqrt(acceleration))
+#dev.off()
+#jpeg(file="mpgtrans4.jpeg")
+#par(mfrow=c(1,2))
+hist(1/sqrt(acceleration), breaks = 40)
+boxplot(1/sqrt(acceleration))
+dev.off()
+
+shapiro.test(data$acceleration)
+shapiro.test(log(data$acceleration))
+shapiro.test(sqrt(data$acceleration))
+shapiro.test(1/sqrt(data$acceleration))
+
+shapiro.test(data$weight)
+shapiro.test(log(data$weight))
+shapiro.test(sqrt(data$weight))
+shapiro.test(1/sqrt(data$weight))
+
+shapiro.test(data$weight)
+shapiro.test(data$acceleration)
+shapiro.test(log(data$acceleration))
+shapiro.test(log(data$acceleration))
+
+logmgp<-sqrt(sqrt(data$mgp))
+shapiro.test(logmgp)
+hist(logmgp,breaks=40)
+
+model<-lm(mgp~displacement+horsepower+weight+acceleration+model_year+origin)
+summary(model)
+AIC(model)
+BIC(model)
+
+model<-lm(mgp~displacement+horsepower+weight+model_year+origin)
+summary(model)
+AIC(model)
+BIC(model)
+
+model<-lm(mgp~displacement+weight+model_year+origin)
+summary(model)
+AIC(model)
+BIC(model)
+
+model<-lm(mgp~weight+model_year+origin)
+summary(model)
+AIC(model)
+BIC(model)
+
+model<-lm(mgp~weight+model_year)
+summary(model)
+goodmodel<-model
+AIC(model)
+BIC(model)
+
+model<-lm(mgp~weight)
+summary(model)
+AIC(model)
+BIC(model)
+
+boxcox(lm(data$mgp~1))
+boxcox(lm(data$a~1))
+
+#model_year<-as.factor(model_year)
+model<-lm(mgp~weight+model_year)
+summary(model)
+AIC(model)
+BIC(model)
+
+eps<-test_data$mgp-predict(goodmodel, newdata=test_data)
+eps
+
+shapiro.test(eps)
+
+hist(sqrt(mpg),breaks = 40)
+
+model2<-lm(log(mgp)~data$displacement+log(weight) + acceleration + model_year + origin)
+#model2<-lm(sqrt(sqrt(mgp))~log(weight) + log(acceleration) + model_year + origin)
+summary(model2)
+
+model2_2<-step(model2)
+summary(model2_2)
+
+test_data$origin <- as.factor(test_data$origin)
+eps<-log(test_data$mgp)-predict(model2_2, newdata=test_data)
+eps
+
+shapiro.test(eps)
+
+durbinWatsonTest(model2_2)
+
+leveneTest(residuals(model2_2)~data$origin)
+\end{lstlisting}
+
+\subsubsection{Question 2: Dataset 1}
+
+\begin{lstlisting}
+{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+Sys.setenv(LANG = "en")
+setwd("C:/Users/Lecuo/Desktop/StatLabWithR")
+#install.packages("readxl")
+library(readxl)
+#install.packages("car")
+library(car)
+#install.packages("corrplot")
+library(corrplot)
+#install.packages("MASS")
+#install.packages("xtable")
+#install.packages("papeR")
+library(MASS)
+library(papeR)
+library(xtable)
+rm(list = ls())
+
+restaurant<-read.csv('restaurant_data.csv', header = T)
+restaurant$Parking.Availability<-as.integer(ifelse(restaurant$Parking.Availability == 'Yes', 1, 0))
+restaurant$Cuisine<-as.factor(restaurant$Cuisine)
+restaurant$Location<-as.factor(restaurant$Location)
+head(restaurant)
+
+# Get the unique values in the 'group' column
+unique_location <- unique(restaurant$Location)
+
+# Initialize a data.frame to hold the dummy variables
+dummy_location <- as.data.frame(matrix(0, nrow = nrow(restaurant), ncol = length(unique_location)))
+colnames(dummy_location) <- paste0(unique_location)
+
+# Fill the dummy variables
+for (i in seq_along(unique_location)) {
+  dummy_location[[i]] <- as.integer(restaurant$Location == unique_location[i])
+}
+
+# Combine the original data.frame with the dummy variables
+restaurant <- cbind(restaurant, dummy_location)
+all_location<-names(dummy_location)
+all_location_formula <- paste(all_location, collapse = " + ")
+all_location_formula
+head(restaurant)
+
+# Get the unique values in the 'group' column
+unique_cuisine <- unique(restaurant$Cuisine)
+
+# Initialize a data.frame to hold the dummy variables
+dummy_cuisine <- as.data.frame(matrix(0, nrow = nrow(restaurant), ncol = length(unique_cuisine)))
+colnames(dummy_cuisine) <- paste0(unique_cuisine)
+
+# Fill the dummy variables
+for (i in seq_along(unique_cuisine)) {
+  dummy_cuisine[[i]] <- as.integer(restaurant$Cuisine == unique_cuisine[i])
+}
+
+# Combine the original data.frame with the dummy variables
+restaurant <- cbind(restaurant, dummy_cuisine)
+all_cuisine<-names(dummy_cuisine)
+all_cuisine_formula <- paste(all_cuisine, collapse = " + ")
+all_cuisine_formula
+head(restaurant)
+
+attach(restaurant)
+str(restaurant)
+
+full_model<-lm(log(Revenue) ~ Seating.Capacity + Average.Meal.Price + log(Marketing.Budget) + Weekday.Reservations + Weekend.Reservations,data = restaurant)
+vif(full_model)
+
+library(ggplot2)
+
+# Sample data
+set.seed(123)
+dataset <- data.frame(
+  X1 = rnorm(100),
+  X2 = rnorm(100),
+  Y = 5 + 3 * rnorm(100) + 2 * rnorm(100) * rnorm(100)
+)
+
+# Create interaction plot
+ggplot(dataset, aes(x = X1, y = Y, color = X2)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Interaction between X1 and X2",
+       x = "X1",
+       y = "Response Y",
+       color = "X2") +
+  theme_minimal()
+
+  scatterplot((Revenue)~ c(Weekend.Reservations + Weekday.Reservations) | Cuisine)
+
+  par(mfrow = c(1,2))
+response<-Revenue
+predictor<-Cuisine
+boxplot((response)~predictor)
+boxplot(log(response)~predictor)
+
+png("Averboxcox.png")
+boxcox(lm(Average.Meal.Price~1))
+dev.off()
+
+tmp <- Average.Meal.Price
+out <- boxcox(lm(tmp~1))
+range(out$x[out$y > max(out$y)-qchisq(0.95,1)/2])
+
+set.seed(777489)
+n<-nrow(restaurant)
+train_indice<-sample(seq_len(n), size = 0.8 * n)
+train_data<-restaurant[train_indice, ]
+test_data<-restaurant[-train_indice, ]
+
+str(restaurant)
+
+model_1<-lm(log(Revenue) ~ log(Seating.Capacity) + log(Average.Meal.Price) + (Marketing.Budget) + Weekday.Reservations * Weekend.Reservations + Parking.Availability,data = train_data)
+model_1<-update(model_1, as.formula(paste(". ~ . + ", all_location_formula)), data =train_data)
+model_1<-update(model_1, as.formula(paste(". ~ . + ", all_cuisine_formula)), data =train_data)
+model_1<-step(model_1)
+summary(model_1)
+
+durbinWatsonTest(model_1)
+
+prediction<-predict(model_1, newdata = test_data)
+residuals<-log(test_data$Revenue) - prediction
+shapiro.test(residuals)
+
+model_2<-lm(Revenue ~ Seating.Capacity:log(Average.Meal.Price) + Seating.Capacity:Location + log(Average.Meal.Price):Cuisine + sqrt(Weekday.Reservations) + sqrt(Weekend.Reservations), data = train_data)
+#model_2<-update(model_2, as.formula(paste(". ~ . + ", all_location_formula)), data =train_data)
+#model_2<-update(model_2, as.formula(paste(". ~ . + ", all_cuisine_formula)), data =train_data)
+summary(model_2)
+model_2<-step(model_2)
+summary(model_2)
+
+durbinWatsonTest(model_2)
+
+prediction<-predict(model_2, newdata = test_data)
+residuals<-(test_data$Revenue) - prediction
+shapiro.test(residuals)
+
+xtable(summary(model_2))
+\end{lstlisting}
+
+\subsubsection{Question 2: Dataset 2}
+
+\begin{lstlisting}
+    {r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+Sys.setenv(LANG = "en")
+setwd("C:/Users/Lecuo/Desktop/StatLabWithR")
+#install.packages("readxl")
+library(readxl)
+#install.packages("car")
+library(car)
+#install.packages("corrplot")
+library(corrplot)
+#install.packages("MASS")
+library(MASS)
+rm(list = ls())
+
+hour<-read.csv("day.csv", header = T)
+hour$season<-as.factor(hour$season)
+#hour$year<-as.factor(hour$year)
+hour$holiday<-as.factor(hour$holiday)
+hour$weekday<-as.factor(hour$weekday)
+hour$workingday<-as.factor(hour$workingday)
+hour$weathersit<-as.factor(hour$weathersit)
+hour$mnth<-as.factor(hour$mnth)
+
+head(hour)
+
+# Get the unique values in the 'group' column
+unique_hr <-c('early')
+
+# Initialize a data.frame to hold the dummy variables
+dummy_hr <- as.data.frame(matrix(0, nrow = nrow(hour), ncol = length(unique_hr)))
+colnames(dummy_hr) <- paste0("hr_", unique_hr)
+
+first_half <- hour$hr <= 12
+#dummy_hr$hr_early <- ifelse(first_half, 1, 0)
+#dummy_hr$hr_late <- ifelse(first_half, 0, 1)
+
+# Combine the original data.frame with the dummy variables
+hour <- cbind(hour, dummy_hr)
+all_hr<-names(dummy_hr)
+all_hr_formula <- paste(all_hr, collapse = " + ")
+all_hr_formula
+head(hour)
+
+# Get the unique values in the 'group' column
+unique_mnth <- c('mid')
+
+# Initialize a data.frame to hold the dummy variables
+dummy_mnth <- as.data.frame(matrix(0, nrow = nrow(hour), ncol = length(unique_mnth)))
+colnames(dummy_mnth) <- paste0("mnth_", unique_mnth)
+
+first_half <- ((as.integer(hour$mnth) <= 10) & (as.integer(hour$mnth) >= 5))
+dummy_mnth$mnth_mid <- ifelse(first_half, 1,0)
+
+# Combine the original data.frame with the dummy variables
+hour <- cbind(hour, dummy_mnth)
+all_mnth<-names(dummy_mnth)
+all_mnth_formula <- paste(all_mnth, collapse = " + ")
+all_mnth_formula
+head(hour)
+
+# Get the unique values in the 'group' column
+unique_season <- unique(hour$season)
+
+# Initialize a data.frame to hold the dummy variables
+dummy_season <- as.data.frame(matrix(0, nrow = nrow(hour), ncol = length(unique_season)))
+colnames(dummy_season) <- paste0("season_", unique_season)
+
+# Fill the dummy variables
+for (i in seq_along(unique_season)) {
+  dummy_season[[i]] <- as.integer(hour$season == unique_season[i])
+}
+
+# Combine the original data.frame with the dummy variables
+hour <- cbind(hour, dummy_season)
+all_season<-names(dummy_season)
+all_season_formula <- paste(all_season, collapse = " + ")
+all_season_formula
+head(hour)
+
+attach(hour)
+
+str(hour)
+
+data<-hour
+numeric_data <- data[sapply(data, is.numeric)]
+cor_matrix<-cor(numeric_data)
+corrplot(cor_matrix, method = "circle", type = "upper",
+         tl.col = "black", tl.srt = 45, # Text label color and rotation
+         col = colorRampPalette(c("red", "white", "blue"))(200), # Color palette
+         addCoef.col = "black", # Add correlation coefficient values
+         diag = FALSE) # Remove the diagonal
+
+full_model<-lm(casual~ temp + hum + windspeed,data = hour)
+vif(full_model)
+
+boxcoxnc(hour$w, method='sw', lambda2=2, lambda =seq(-5,5,0.01),plot=TRUE, alpha=0.05, verbose=TRUE)
+
+par(mfrow = c(2,2))
+target<-registered
+hist(target, breaks = 40)
+boxplot(target)
+hist(log(target), breaks = 40)
+boxplot(log(target))
+
+guess<-casual
+shapiro.test(guess)
+shapiro.test(log(guess))
+
+par(mfrow = c(1,2))
+response<-registered
+predictor<-weathersit
+boxplot((response)~predictor)
+boxplot(log(response)~predictor)
+
+par(mfrow = c(2,2))
+response<-registered
+predictor<- temp * windspeed
+plot(predictor, response)
+plot(predictor, log(response))
+plot(log(predictor), response)
+plot(log(predictor), log(response))
+
+holiday <- as.double(holiday)
+workingday <- as.double(workingday)
+weekday <- as.double(workingday)
+vif(lm(registered~holiday+workingday))
+cor(data.frame(registered,holiday,workingday,weekday))
+holiday <- as.factor(holiday)
+workingday <- as.factor(workingday)
+weekday <- as.factor(workingday)
+
+scatterplot((registered)~ hum | weathersit)
+
+set.seed(777489)
+n<-nrow(hour)
+train_indice<-sample(seq_len(n), size = 0.8 * n)
+train_data<-hour[train_indice, ]
+test_data<-hour[-train_indice, ]
+
+model1<-lm((registered) ~ weekday + workingday + holiday + yr + mnth + weathersit + (temp) + (hum) + (windspeed), data = train_data)
+#model1<-update(model1, as.formula(paste(". ~ . + ", all_mnth_formula)), data =train_data)
+model1<-update(model1, as.formula(paste(". ~ . + ", all_season_formula)), data =train_data)
+#model1<-update(model1, as.formula(paste(". ~ . + ", all_hr_formula)), data =train_data)
+model1<-step(model1)
+summary(model1)
+AIC(model1)
+BIC(model1)
+
+durbinWatsonTest(model1)
+
+prediction<-predict(model1, newdata = test_data)
+residuals<-test_data$registered - prediction
+shapiro.test(residuals)
+
+leveneTest(residuals(model1)~ train_data$weathersit)
+
+model2<-lm((registered) ~ holiday + yr + weathersit + temp + (temp):season + temp:mnth + (hum) + hum:mnth + hum:weathersit + (windspeed) , data = train_data)
+summary(model2)
+#model2<-update(model2, as.formula(paste(". ~ . + ", all_mnth_formula)), data =train_data)
+#model2<-update(model2, as.formula(paste(". ~ . + ", all_season_formula)), data =train_data)
+#model2<-update(model2, as.formula(paste(". ~ . + ", all_hr_formula)), data =train_data)
+model2<-step(model2)
+summary(model2)
+AIC(model2)
+BIC(model2)
+
+prediction<-predict(model2, newdata = test_data)
+residuals<-test_data$registered - prediction
+shapiro.test(residuals)
+
+xtable(summary(model2))
+\end{lstlisting}
